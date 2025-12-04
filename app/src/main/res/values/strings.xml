@@ -1,6 +1,8 @@
 <resources>
     <string name="app_name">TrainingApp</string>
+    <string name="birthday_title">Set your birthday</string>
     <string name="birthday_explanation">Please share your date of birth so we can tailor your training.</string>
+    <string name="birthday_picker_label">Select your date of birth</string>
     <string name="confirm_birthday">Continue</string>
     <string name="birthday_saved_toast">Birthday saved!</string>
 </resources>
