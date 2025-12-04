@@ -15,6 +15,16 @@
             android:name=".MainActivity"
             android:exported="true"
             android:label="@string/app_name"
+            android:theme="@style/Theme.TrainingApp" />
+        <activity
+            android:name=".BirthdaySetupActivity"
+            android:exported="false"
+            android:label="@string/app_name"
+            android:theme="@style/Theme.TrainingApp" />
+        <activity
+            android:name=".LauncherActivity"
+            android:exported="true"
+            android:label="@string/app_name"
             android:theme="@style/Theme.TrainingApp">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
