@@ -1,5 +1,6 @@
 package com.example.trainingapp
 
+import android.app.DatePickerDialog
 import android.content.Intent
 import android.os.Bundle
 import android.widget.Toast
@@ -15,16 +16,12 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.DatePicker
-import androidx.compose.material3.DatePickerDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -38,8 +35,7 @@ import androidx.compose.ui.unit.sp
 import com.example.trainingapp.data.UserProfileRepository
 import com.example.trainingapp.ui.theme.TrainingAppTheme
 import java.time.LocalDate
-import java.time.Instant
-import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 
 class BirthdaySetupActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -59,31 +55,38 @@ class BirthdaySetupActivity : ComponentActivity() {
     }
 }
 
-private fun LocalDate.toStartOfDayMillis(): Long =
-    atStartOfDay(ZoneId.systemDefault())
-        .toInstant()
-        .toEpochMilli()
-
-private fun Long.toLocalDate(): LocalDate =
-    Instant.ofEpochMilli(this)
-        .atZone(ZoneId.systemDefault())
-        .toLocalDate()
-
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BirthdaySetupScreen(onBirthdayConfirmed: (LocalDate) -> Unit) {
     val context = LocalContext.current
     var selectedDate by remember { mutableStateOf(LocalDate.now()) }
+    var showDatePicker by remember { mutableStateOf(false) }
 
-    val datePickerState = rememberDatePickerState(
-        initialSelectedDateMillis = selectedDate.toStartOfDayMillis()
-    )
-
+    val dateFormatter = remember { DateTimeFormatter.ofPattern("MMM d, yyyy") }
     val colorScheme = MaterialTheme.colorScheme
 
-    LaunchedEffect(datePickerState.selectedDateMillis) {
-        datePickerState.selectedDateMillis?.let { millis ->
-            selectedDate = millis.toLocalDate()
+    if (showDatePicker) {
+        DisposableEffect(Unit) {
+            val listener = DatePickerDialog.OnDateSetListener { _, year, month, dayOfMonth ->
+                selectedDate = LocalDate.of(year, month + 1, dayOfMonth)
+            }
+
+            val dialog = DatePickerDialog(
+                context,
+                listener,
+                selectedDate.year,
+                selectedDate.monthValue - 1,
+                selectedDate.dayOfMonth
+            ).apply {
+                datePicker.maxDate = System.currentTimeMillis()
+                setOnDismissListener { showDatePicker = false }
+            }
+
+            dialog.show()
+
+            onDispose {
+                dialog.setOnDismissListener(null)
+                dialog.dismiss()
+            }
         }
     }
 
@@ -127,36 +130,42 @@ fun BirthdaySetupScreen(onBirthdayConfirmed: (LocalDate) -> Unit) {
                 modifier = Modifier.fillMaxWidth()
             )
 
-            DatePicker(
-                state = datePickerState,
-                showModeToggle = false,
-                title = {},
-                headline = {},
-                colors = DatePickerDefaults.colors(
-                    containerColor = colorScheme.surface,
-                    titleContentColor = colorScheme.onSurface,
-                    headlineContentColor = colorScheme.onSurface,
-                    weekdayContentColor = colorScheme.onSurfaceVariant,
-                    subheadContentColor = colorScheme.onSurfaceVariant,
-                    yearContentColor = colorScheme.onSurface,
-                    disabledYearContentColor = colorScheme.onSurfaceVariant,
-                    selectedYearContentColor = colorScheme.onPrimary,
-                    currentYearContentColor = colorScheme.primary,
-                    selectedYearContainerColor = colorScheme.primary,
-                    dayContentColor = colorScheme.onSurface,
-                    disabledDayContentColor = colorScheme.onSurfaceVariant,
-                    selectedDayContentColor = colorScheme.onPrimary,
-                    disabledSelectedDayContentColor = colorScheme.onPrimary.copy(alpha = 0.6f),
-                    selectedDayContainerColor = colorScheme.primary,
-                    disabledSelectedDayContainerColor = colorScheme.primary.copy(alpha = 0.38f),
-                    todayContentColor = colorScheme.primary,
-                    todayDateBorderColor = colorScheme.primary,
-                    dividerColor = colorScheme.outlineVariant
-                ),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 8.dp)
-            )
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                color = colorScheme.surface,
+                shadowElevation = 1.dp
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(
+                        text = selectedDate.format(dateFormatter),
+                        style = MaterialTheme.typography.titleMedium,
+                        color = colorScheme.onSurface,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    Button(
+                        onClick = { showDatePicker = true },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(48.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = colorScheme.primary,
+                            contentColor = colorScheme.onPrimary
+                        )
+                    ) {
+                        Text(
+                            text = context.getString(R.string.select_date),
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+            }
         }
 
         Spacer(modifier = Modifier.height(12.dp))
