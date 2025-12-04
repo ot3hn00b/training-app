@@ -17,6 +17,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -68,6 +69,7 @@ private fun Long.toLocalDate(): LocalDate =
         .atZone(ZoneId.systemDefault())
         .toLocalDate()
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BirthdaySetupScreen(onBirthdayConfirmed: (LocalDate) -> Unit) {
     val context = LocalContext.current
