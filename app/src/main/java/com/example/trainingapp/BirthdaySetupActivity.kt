@@ -1,5 +1,6 @@
 package com.example.trainingapp
 
+import android.app.DatePickerDialog
 import android.content.Intent
 import android.os.Bundle
 import android.widget.Toast
@@ -13,18 +14,15 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.DatePicker
-import androidx.compose.material3.DatePickerDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -38,8 +36,7 @@ import androidx.compose.ui.unit.sp
 import com.example.trainingapp.data.UserProfileRepository
 import com.example.trainingapp.ui.theme.TrainingAppTheme
 import java.time.LocalDate
-import java.time.Instant
-import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 
 class BirthdaySetupActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -59,38 +56,18 @@ class BirthdaySetupActivity : ComponentActivity() {
     }
 }
 
-private fun LocalDate.toStartOfDayMillis(): Long =
-    atStartOfDay(ZoneId.systemDefault())
-        .toInstant()
-        .toEpochMilli()
-
-private fun Long.toLocalDate(): LocalDate =
-    Instant.ofEpochMilli(this)
-        .atZone(ZoneId.systemDefault())
-        .toLocalDate()
-
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BirthdaySetupScreen(onBirthdayConfirmed: (LocalDate) -> Unit) {
     val context = LocalContext.current
     var selectedDate by remember { mutableStateOf(LocalDate.now()) }
-
-    val datePickerState = rememberDatePickerState(
-        initialSelectedDateMillis = selectedDate.toStartOfDayMillis()
-    )
-
     val colorScheme = MaterialTheme.colorScheme
-
-    LaunchedEffect(datePickerState.selectedDateMillis) {
-        datePickerState.selectedDateMillis?.let { millis ->
-            selectedDate = millis.toLocalDate()
-        }
-    }
+    val dateFormatter = remember { DateTimeFormatter.ofPattern("MMMM d, yyyy") }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(colorScheme.background)
+            .windowInsetsPadding(WindowInsets.systemBars)
             .padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(24.dp, Alignment.Top),
         horizontalAlignment = Alignment.CenterHorizontally
@@ -127,36 +104,37 @@ fun BirthdaySetupScreen(onBirthdayConfirmed: (LocalDate) -> Unit) {
                 modifier = Modifier.fillMaxWidth()
             )
 
-            DatePicker(
-                state = datePickerState,
-                showModeToggle = false,
-                title = {},
-                headline = {},
-                colors = DatePickerDefaults.colors(
-                    containerColor = colorScheme.surface,
-                    titleContentColor = colorScheme.onSurface,
-                    headlineContentColor = colorScheme.onSurface,
-                    weekdayContentColor = colorScheme.onSurfaceVariant,
-                    subheadContentColor = colorScheme.onSurfaceVariant,
-                    yearContentColor = colorScheme.onSurface,
-                    disabledYearContentColor = colorScheme.onSurfaceVariant,
-                    selectedYearContentColor = colorScheme.onPrimary,
-                    currentYearContentColor = colorScheme.primary,
-                    selectedYearContainerColor = colorScheme.primary,
-                    dayContentColor = colorScheme.onSurface,
-                    disabledDayContentColor = colorScheme.onSurfaceVariant,
-                    selectedDayContentColor = colorScheme.onPrimary,
-                    disabledSelectedDayContentColor = colorScheme.onPrimary.copy(alpha = 0.6f),
-                    selectedDayContainerColor = colorScheme.primary,
-                    disabledSelectedDayContainerColor = colorScheme.primary.copy(alpha = 0.38f),
-                    todayContentColor = colorScheme.primary,
-                    todayDateBorderColor = colorScheme.primary,
-                    dividerColor = colorScheme.outlineVariant
-                ),
+            Button(
+                onClick = {
+                    val date = selectedDate
+                    val dialog = DatePickerDialog(
+                        context,
+                        { _, year, month, dayOfMonth ->
+                            selectedDate = LocalDate.of(year, month + 1, dayOfMonth)
+                        },
+                        date.year,
+                        date.monthValue - 1,
+                        date.dayOfMonth
+                    )
+                    dialog.datePicker.spinnersShown = false
+                    dialog.datePicker.calendarViewShown = true
+                    dialog.show()
+                },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 8.dp)
-            )
+                    .height(56.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = colorScheme.surface,
+                    contentColor = colorScheme.onSurface
+                )
+            ) {
+                Text(
+                    text = selectedDate.format(dateFormatter),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    textAlign = TextAlign.Center
+                )
+            }
         }
 
         Spacer(modifier = Modifier.height(12.dp))
