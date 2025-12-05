@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
@@ -28,6 +29,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -58,10 +60,12 @@ class BirthdaySetupActivity : ComponentActivity() {
 @Composable
 fun BirthdaySetupScreen(onBirthdayConfirmed: (LocalDate) -> Unit) {
     val context = LocalContext.current
-    var selectedDate by remember { mutableStateOf(LocalDate.now()) }
+    var selectedDate by remember { mutableStateOf<LocalDate?>(LocalDate.now()) }
     var showDatePicker by remember { mutableStateOf(false) }
+    var showConfirmationDialog by remember { mutableStateOf(false) }
 
     val dateFormatter = remember { DateTimeFormatter.ofPattern("MMM d, yyyy") }
+    val confirmationFormatter = remember { DateTimeFormatter.ofPattern("d MMMM yyyy") }
     val colorScheme = MaterialTheme.colorScheme
 
     if (showDatePicker) {
@@ -70,12 +74,14 @@ fun BirthdaySetupScreen(onBirthdayConfirmed: (LocalDate) -> Unit) {
                 selectedDate = LocalDate.of(year, month + 1, dayOfMonth)
             }
 
+            val initialDate = selectedDate ?: LocalDate.now()
+
             val dialog = DatePickerDialog(
                 context,
                 listener,
-                selectedDate.year,
-                selectedDate.monthValue - 1,
-                selectedDate.dayOfMonth
+                initialDate.year,
+                initialDate.monthValue - 1,
+                initialDate.dayOfMonth
             ).apply {
                 datePicker.maxDate = System.currentTimeMillis()
                 setOnDismissListener { showDatePicker = false }
@@ -142,7 +148,8 @@ fun BirthdaySetupScreen(onBirthdayConfirmed: (LocalDate) -> Unit) {
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Text(
-                        text = selectedDate.format(dateFormatter),
+                        text = selectedDate?.format(dateFormatter)
+                            ?: context.getString(R.string.select_date),
                         style = MaterialTheme.typography.titleMedium,
                         color = colorScheme.onSurface,
                         modifier = Modifier.fillMaxWidth()
@@ -172,10 +179,13 @@ fun BirthdaySetupScreen(onBirthdayConfirmed: (LocalDate) -> Unit) {
 
         Button(
             onClick = {
-                selectedDate.let { date ->
-                    onBirthdayConfirmed(date)
-                    Toast.makeText(context, context.getString(R.string.birthday_saved_toast), Toast.LENGTH_SHORT).show()
-                }
+                selectedDate?.let {
+                    showConfirmationDialog = true
+                } ?: Toast.makeText(
+                    context,
+                    context.getString(R.string.birthday_invalid_date),
+                    Toast.LENGTH_SHORT
+                ).show()
             },
             modifier = Modifier
                 .fillMaxWidth()
@@ -189,6 +199,54 @@ fun BirthdaySetupScreen(onBirthdayConfirmed: (LocalDate) -> Unit) {
                 text = context.getString(R.string.confirm_birthday),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
+            )
+        }
+
+        if (showConfirmationDialog) {
+            AlertDialog(
+                onDismissRequest = { showConfirmationDialog = false },
+                title = {
+                    Text(text = stringResource(id = R.string.birthday_confirmation_title))
+                },
+                text = {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(
+                            text = stringResource(
+                                id = R.string.birthday_confirmation_message,
+                                selectedDate?.format(confirmationFormatter).orEmpty()
+                            ),
+                            style = MaterialTheme.typography.bodyLarge
+                        )
+                    }
+                },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            selectedDate?.let { date ->
+                                onBirthdayConfirmed(date)
+                                showConfirmationDialog = false
+                                Toast.makeText(
+                                    context,
+                                    context.getString(R.string.birthday_saved_toast),
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
+                        }
+                    ) {
+                        Text(text = stringResource(id = R.string.birthday_confirmation_positive))
+                    }
+                },
+                dismissButton = {
+                    Button(
+                        onClick = { showConfirmationDialog = false },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = colorScheme.surfaceVariant,
+                            contentColor = colorScheme.onSurface
+                        )
+                    ) {
+                        Text(text = stringResource(id = R.string.birthday_confirmation_negative))
+                    }
+                }
             )
         }
     }
