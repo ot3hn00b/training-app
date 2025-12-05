@@ -6,11 +6,4 @@
     <string name="select_date">Choose date</string>
     <string name="confirm_birthday">Continue</string>
     <string name="birthday_saved_toast">Birthday saved!</string>
-    <string name="birthday_no_date_selected">No date selected</string>
-    <string name="birthday_missing_date">Please select a valid date</string>
-    <string name="birthday_confirmation_title">Confirm your birth date</string>
-    <string name="birthday_confirmation_message">You selected: %1$s
-This date will be saved on this device and you won&#39;t be asked again.</string>
-    <string name="birthday_confirmation_positive">Confirm</string>
-    <string name="birthday_confirmation_negative">Change date</string>
 </resources>
