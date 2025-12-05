@@ -14,10 +14,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -32,6 +34,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.res.stringResource
 import com.example.trainingapp.data.UserProfileRepository
 import com.example.trainingapp.ui.theme.TrainingAppTheme
 import java.time.LocalDate
@@ -60,9 +63,48 @@ fun BirthdaySetupScreen(onBirthdayConfirmed: (LocalDate) -> Unit) {
     val context = LocalContext.current
     var selectedDate by remember { mutableStateOf(LocalDate.now()) }
     var showDatePicker by remember { mutableStateOf(false) }
+    var showConfirmationDialog by remember { mutableStateOf(false) }
 
     val dateFormatter = remember { DateTimeFormatter.ofPattern("MMM d, yyyy") }
+    val confirmationDateFormatter = remember { DateTimeFormatter.ofPattern("d MMMM yyyy") }
     val colorScheme = MaterialTheme.colorScheme
+
+    if (showConfirmationDialog) {
+        AlertDialog(
+            onDismissRequest = { showConfirmationDialog = false },
+            title = {
+                Text(text = stringResource(id = R.string.confirm_birth_date_title))
+            },
+            text = {
+                Text(
+                    text = stringResource(
+                        id = R.string.confirm_birth_date_message,
+                        selectedDate.format(confirmationDateFormatter)
+                    )
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    showConfirmationDialog = false
+                    selectedDate.let { date ->
+                        onBirthdayConfirmed(date)
+                        Toast.makeText(
+                            context,
+                            context.getString(R.string.birthday_saved_toast),
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                }) {
+                    Text(text = stringResource(id = R.string.confirm_button_label))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showConfirmationDialog = false }) {
+                    Text(text = stringResource(id = R.string.change_date_button_label))
+                }
+            }
+        )
+    }
 
     if (showDatePicker) {
         DisposableEffect(Unit) {
@@ -172,10 +214,7 @@ fun BirthdaySetupScreen(onBirthdayConfirmed: (LocalDate) -> Unit) {
 
         Button(
             onClick = {
-                selectedDate.let { date ->
-                    onBirthdayConfirmed(date)
-                    Toast.makeText(context, context.getString(R.string.birthday_saved_toast), Toast.LENGTH_SHORT).show()
-                }
+                showConfirmationDialog = true
             },
             modifier = Modifier
                 .fillMaxWidth()

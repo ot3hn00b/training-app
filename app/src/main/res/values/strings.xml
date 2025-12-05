@@ -6,4 +6,8 @@
     <string name="select_date">Choose date</string>
     <string name="confirm_birthday">Continue</string>
     <string name="birthday_saved_toast">Birthday saved!</string>
+    <string name="confirm_birth_date_title">Confirm your birth date</string>
+    <string name="confirm_birth_date_message">You selected: %1$s. This date will be saved and you won’t be asked again.</string>
+    <string name="confirm_button_label">Confirm</string>
+    <string name="change_date_button_label">Change date</string>
 </resources>
