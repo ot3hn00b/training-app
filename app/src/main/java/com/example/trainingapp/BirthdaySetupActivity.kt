@@ -14,13 +14,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
@@ -60,9 +58,8 @@ class BirthdaySetupActivity : ComponentActivity() {
 @Composable
 fun BirthdaySetupScreen(onBirthdayConfirmed: (LocalDate) -> Unit) {
     val context = LocalContext.current
-    var selectedDate by remember { mutableStateOf<LocalDate?>(null) }
+    var selectedDate by remember { mutableStateOf(LocalDate.now()) }
     var showDatePicker by remember { mutableStateOf(false) }
-    var showConfirmationDialog by remember { mutableStateOf(false) }
 
     val dateFormatter = remember { DateTimeFormatter.ofPattern("MMM d, yyyy") }
     val colorScheme = MaterialTheme.colorScheme
@@ -73,14 +70,12 @@ fun BirthdaySetupScreen(onBirthdayConfirmed: (LocalDate) -> Unit) {
                 selectedDate = LocalDate.of(year, month + 1, dayOfMonth)
             }
 
-            val initialDate = selectedDate ?: LocalDate.now()
-
             val dialog = DatePickerDialog(
                 context,
                 listener,
-                initialDate.year,
-                initialDate.monthValue - 1,
-                initialDate.dayOfMonth
+                selectedDate.year,
+                selectedDate.monthValue - 1,
+                selectedDate.dayOfMonth
             ).apply {
                 datePicker.maxDate = System.currentTimeMillis()
                 setOnDismissListener { showDatePicker = false }
@@ -147,8 +142,7 @@ fun BirthdaySetupScreen(onBirthdayConfirmed: (LocalDate) -> Unit) {
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Text(
-                        text = selectedDate?.format(dateFormatter)
-                            ?: context.getString(R.string.birthday_no_date_selected),
+                        text = selectedDate.format(dateFormatter),
                         style = MaterialTheme.typography.titleMedium,
                         color = colorScheme.onSurface,
                         modifier = Modifier.fillMaxWidth()
@@ -178,15 +172,9 @@ fun BirthdaySetupScreen(onBirthdayConfirmed: (LocalDate) -> Unit) {
 
         Button(
             onClick = {
-                val date = selectedDate
-                if (date == null) {
-                    Toast.makeText(
-                        context,
-                        context.getString(R.string.birthday_missing_date),
-                        Toast.LENGTH_SHORT
-                    ).show()
-                } else {
-                    showConfirmationDialog = true
+                selectedDate.let { date ->
+                    onBirthdayConfirmed(date)
+                    Toast.makeText(context, context.getString(R.string.birthday_saved_toast), Toast.LENGTH_SHORT).show()
                 }
             },
             modifier = Modifier
@@ -201,46 +189,6 @@ fun BirthdaySetupScreen(onBirthdayConfirmed: (LocalDate) -> Unit) {
                 text = context.getString(R.string.confirm_birthday),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
-            )
-        }
-    }
-
-    if (showConfirmationDialog && selectedDate != null) {
-        selectedDate?.let { dateToConfirm ->
-            val formattedDate = dateToConfirm.format(dateFormatter)
-            AlertDialog(
-                onDismissRequest = { showConfirmationDialog = false },
-                title = {
-                    Text(text = context.getString(R.string.birthday_confirmation_title))
-                },
-                text = {
-                    Text(
-                        text = context.getString(
-                            R.string.birthday_confirmation_message,
-                            formattedDate
-                        )
-                    )
-                },
-                confirmButton = {
-                    TextButton(
-                        onClick = {
-                            showConfirmationDialog = false
-                            onBirthdayConfirmed(dateToConfirm)
-                            Toast.makeText(
-                                context,
-                                context.getString(R.string.birthday_saved_toast),
-                                Toast.LENGTH_SHORT
-                            ).show()
-                        }
-                    ) {
-                        Text(text = context.getString(R.string.birthday_confirmation_positive))
-                    }
-                },
-                dismissButton = {
-                    TextButton(onClick = { showConfirmationDialog = false }) {
-                        Text(text = context.getString(R.string.birthday_confirmation_negative))
-                    }
-                }
             )
         }
     }
